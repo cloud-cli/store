@@ -23,10 +23,13 @@
   },
   "author": "Darlan Alves <me@darlanalv.es>",
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
     "@cloud-cli/jest-config": "^1.0.0",
     "@cloud-cli/prettier-config": "^1.0.0",
-    "@cloud-cli/typescript-config": "^1.0.1"
+    "@cloud-cli/typescript-config": "^1.0.1",
+    "sqlite3": "^5.1.6"
+  },
+  "peerDependencies": {
+    "sqlite3": "^5.1.0"
   }
 }

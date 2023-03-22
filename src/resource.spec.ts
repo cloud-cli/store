@@ -1,18 +1,14 @@
-import { Model, NotNull, Property, Query, Resource, ResourceDriver, Unique } from './index';
+import { Model, NotNull, Primary, Property, Query, Resource, ResourceDriver, Unique } from './index';
 
 class Driver extends ResourceDriver {
   save = jest.fn();
   remove = jest.fn();
   find = jest.fn();
   findAll = jest.fn();
+  create = jest.fn();
 }
 
 describe('Resource', () => {
-  it('should throw an error if name is missing', () => {
-    class Foo extends Resource {}
-    expect(() => new Foo()).toThrowError('Name is missing. Did you add @Model() to your class?');
-  });
-
   it('should have decorators to declare properties', () => {
     class Foo extends Resource {
       @NotNull()
@@ -44,7 +40,7 @@ describe('Resource', () => {
   describe('operations', () => {
     @Model('user')
     class User extends Resource {
-      @NotNull() @Unique() @Property(Number) id: number;
+      @Primary() @NotNull() @Unique() @Property(Number) id: number;
       @Property(String) name: string;
     }
 
@@ -80,16 +76,36 @@ describe('Resource', () => {
       ]);
     });
 
-    it('should describe a model', () => {
+    it('should describe a resource', () => {
       const description = Resource.describe(User);
 
       expect(description).toEqual({
         name: 'user',
         fields: [
-          { name: 'id', type: Number, notNull: true, unique: true, defaultValue: undefined },
+          { name: 'id', type: Number, notNull: true, primary: true, unique: true, defaultValue: undefined },
           { name: 'name', type: String, defaultValue: undefined },
         ],
       });
+
+      expect(() => Resource.describe(class extends Resource { })).toThrowError('Name is missing. Did you add @Model() to your class?');
+    });
+
+    it('should insert a primary key if not present', () => {
+      @Model('user')
+      class User extends Resource { }
+
+      const description = Resource.describe(User);
+      expect(description).toEqual({
+        name: 'user',
+        fields: [{ name: 'oid', primary: true, type: Number }]
+      });
+    });
+
+    it('should create the storage for a resource', () => {
+      const driver = new Driver();
+      Resource.use(driver);
+      Resource.create(User);
+      expect(driver.create).toHaveBeenCalledWith(User);
     });
   });
 });
