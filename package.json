@@ -10,13 +10,13 @@
     "test": "jest",
     "tdd": "jest --watchAll",
     "build": "tsc"
-  },
+w  },
   "keywords": [
     "cloudy"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/cloud-cli/store"
+    "url": "https://github.com/cloud-cli/store.git"
   },
   "publishConfig": {
     "access": "public"
