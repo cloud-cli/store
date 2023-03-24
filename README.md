@@ -5,18 +5,26 @@ A tiny abstraction of database tables
 ## Usage
 
 ```ts
-import { Resource, Query, Property, Unique, Model, SQLiteDriver } from '@cloud-cli/store';
+import { Model, Primary, Property, Query, Resource, Unique, Model, SQLiteDriver } from '@cloud-cli/store';
 
-Resource.use(new SQLiteDriver());
+// initialize
+Resource.use(new SQLiteDriver(':memory:'));
 
+// create a resource
 @Model('user')
 class User extends Resource {
-  @Unique() @Property(Number) id: number;
+  @Unique() @Primary() @Property(Number) id: number;
   @Property(String) name: string;
 }
 
+// save
 const john = new User({ name: 'John' });
-john.save();
+const id = await john.save();
 
-const users = await Resource.find(User, new Query());
+// find with filters
+const query = new Query<User>().where('name').is('John');
+const users = await Resource.find(User, query);
+
+// remove an item
+await users[0].remove();
 ```
