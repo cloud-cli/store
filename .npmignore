@@ -1,3 +1,5 @@
 coverage/
 jest*.mjs
 tsconfig.json
+dist/*.spec.js
+dist/*.spec.d.ts
