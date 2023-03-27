@@ -152,7 +152,7 @@ export class SQLiteDriver extends ResourceDriver {
     const desc = Resource.describe(resource);
     const { name } = desc;
     const fields = desc.fields as TableColumn[];
-    const names = fields.map(f => `${f.name} ${f.type === Number ? 'INTEGER' : 'TEXT'}` + (f.notNull && ' NOT NULL' || ''));
+    const names = fields.map(f => `${f.name} ${f.type === Number || f.type === Boolean ? 'INTEGER' : 'TEXT'}` + (f.notNull && ' NOT NULL' || ''));
     const unique = fields.filter((field) => field.unique).map(f => f.name);
     const primary = fields.filter(field => field.primary && field.type === Number);
 

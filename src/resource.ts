@@ -90,7 +90,12 @@ type PropertiesOf<T extends Resource> = {
   [K in keyof T]: T[K] extends () => any ? never : K;
 }[keyof T];
 
+export type ResourceProperties<T extends Resource> = {
+  [K in PropertiesOf<T>]: T[K] extends never ? never : T[K];
+};
+
 type Filter<T extends Resource> = [PropertiesOf<T>, string, ColumnValue];
+
 export class Query<T extends Resource> {
   private readonly q: Filter<T>[] = [];
 

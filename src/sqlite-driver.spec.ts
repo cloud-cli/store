@@ -20,12 +20,13 @@ describe('sqlite driver', () => {
       @Model('user')
       class User extends Resource {
         @Property(String) name: string;
+        @Property(Boolean) alive: boolean;
       }
 
       const db = setup();
       await Resource.create(User);
 
-      expect(db.run).toHaveBeenCalledWith('CREATE TABLE IF NOT EXISTS user (oid INTEGER, name TEXT, PRIMARY KEY(oid))', expect.any(Function));
+      expect(db.run).toHaveBeenCalledWith('CREATE TABLE IF NOT EXISTS user (oid INTEGER, name TEXT, alive INTEGER, PRIMARY KEY(oid))', expect.any(Function));
     });
 
     it('should throw an error if primary key is invalid', async () => {
@@ -153,22 +154,23 @@ describe('sqlite driver', () => {
         @Primary() @Property(Number) oid: number;
         @Property(String) name: string;
         @Property(String) type: string;
+        @Property(Boolean) enabled: boolean;
       }
 
-      const group = new Group({ name: 'group' });
+      const group = new Group({ name: 'group', enabled: true });
       const id = await group.save();
 
       expect(id).toBe(123);
-      expect(db.prepare).toHaveBeenCalledWith('INSERT INTO group (name,type) VALUES (?,?)');
+      expect(db.prepare).toHaveBeenCalledWith('INSERT INTO group (name,type,enabled) VALUES (?,?,?)');
       expect(db.all).toHaveBeenCalledWith('SELECT last_insert_rowid() as id', expect.any(Function));
-      expect(db.run).toHaveBeenCalledWith(['group', ''], expect.any(Function));
+      expect(db.run).toHaveBeenCalledWith(['group', '', 1], expect.any(Function));
     });
 
     it('should reject if item cannot be stored', async () => {
       setup(undefined, [new Error('Nope')]);
 
       @Model('group')
-      class Group extends Resource {}
+      class Group extends Resource { }
       const group = new Group({});
       await expect(group.save()).rejects.toThrowError(new Error('Cannot store item: Nope'));
 
@@ -200,7 +202,7 @@ describe('sqlite driver', () => {
       }
 
       const user = new Group({ oid: 123 });
-      await expect( user.remove()).rejects.toThrowError(new Error('Unable to remove: bang'));
+      await expect(user.remove()).rejects.toThrowError(new Error('Unable to remove: bang'));
     });
   });
 
@@ -238,9 +240,13 @@ describe('sqlite driver', () => {
       }
 
       expect(ids).toEqual([1, 2]);
+      const savedHeroes = await Resource.find(Hero, new Query<Hero>());
+
+      expect(savedHeroes.length).toBe(2);
+      expect(savedHeroes[0].dead).toBe(true);
+      expect(savedHeroes[1].dead).toBe(false);
 
       const [tonyStark] = await Resource.find(Hero, new Query<Hero>().where('name').is('Tony'));
-
       expect(tonyStark).not.toBeUndefined();
       expect(tonyStark.id).toBe(1);
       expect(tonyStark.dead).toBe(true);
