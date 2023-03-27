@@ -24,8 +24,9 @@ function getMetadataOf(target: any, property?: string | symbol) {
   return map.get(property);
 }
 
-type ColumnType = typeof String | typeof Number | typeof Object;
-type ConstructorOf<T> = { new (...args: any[]): T; prototype: T };
+export type ColumnType = typeof String | typeof Number | typeof Object | typeof Boolean;
+export type ColumnValue = string | number | boolean;
+type ConstructorOf<T> = { new(...args: any[]): T; prototype: T };
 
 export interface TableColumn {
   name: string;
@@ -44,28 +45,28 @@ export function Model(name: string): any {
 }
 
 export function NotNull(): any {
-  return function (target, property) {
+  return function (target: any, property: string | symbol) {
     const meta = getMetadataOf(target, property);
     meta.notNull = true;
   };
 }
 
 export function Unique(): any {
-  return function (target, property): any {
+  return function (target: any, property: string | symbol): any {
     const meta = getMetadataOf(target, property);
     meta.unique = true;
   };
 }
 
 export function Primary(): any {
-  return function (target, property): any {
+  return function (target: any, property: string | symbol): any {
     const meta = getMetadataOf(target, property);
     meta.primary = true;
   };
 }
 
 export function Property(type: ColumnType, defaultValue?: any): any {
-  return function (target, name): any {
+  return function (target: any, name: string | symbol): any {
     Object.assign(getMetadataOf(target, name), {
       name,
       type,
@@ -83,16 +84,17 @@ const operators = {
   lte: '<=',
 };
 
-type Clause<T extends Resource> = Record<keyof typeof operators, (value: string | number) => Query<T>>;
+type Clause<T extends Resource> = Record<keyof typeof operators, (value: ColumnValue) => Query<T>>;
 
 type PropertiesOf<T extends Resource> = {
   [K in keyof T]: T[K] extends () => any ? never : K;
 }[keyof T];
 
+type Filter<T extends Resource> = [PropertiesOf<T>, string, ColumnValue];
 export class Query<T extends Resource> {
-  private readonly q = [];
+  private readonly q: Filter<T>[] = [];
 
-  push(field: PropertiesOf<T>, operator: string, value: string | number) {
+  push(field: PropertiesOf<T>, operator: string, value: ColumnValue) {
     this.q.push([field, operator, value]);
     return this;
   }
@@ -102,8 +104,8 @@ export class Query<T extends Resource> {
     const p = new Proxy(
       {},
       {
-        get(_t, op: string) {
-          return (v: string | number) => q.push(field, operators[op], v);
+        get(_t, operator: string) {
+          return (value: ColumnValue) => q.push(field, operators[operator], value);
         },
       },
     );
@@ -111,7 +113,7 @@ export class Query<T extends Resource> {
     return p as Clause<T>;
   }
 
-  toJSON(): Array<[string, string, string]> {
+  toJSON() {
     return this.q;
   }
 }

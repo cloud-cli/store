@@ -1,5 +1,5 @@
 import sqlite3 from 'sqlite3';
-import type { TableColumn } from './resource.js';
+import type { ColumnType, ColumnValue, TableColumn } from './resource.js';
 import { Query, Resource, ResourceDriver } from './resource.js';
 
 
@@ -12,6 +12,38 @@ export class SQLiteDriver extends ResourceDriver {
     this.db = new sqlite3.Database(path);
   }
 
+  static parse(type: ColumnType, value: ColumnValue) {
+    if (type === Number) {
+      return Number(value);
+    }
+
+    if (type === Boolean) {
+      return Number(value) === 1;
+    }
+
+    if (type === Object) {
+      return JSON.parse(String(value));
+    }
+
+    return String(value);
+  }
+
+  static serialize(type: ColumnType, value: ColumnValue) {
+    if (type === Number) {
+      return Number(value);
+    }
+
+    if (type === Object) {
+      return JSON.stringify(value);
+    }
+
+    if (type === Boolean) {
+      return Number(value) === 1 ? 1 : 0;
+    }
+
+    return String(value);
+  }
+
   async save<T extends Resource>(model: T) {
     const resource = Object.getPrototypeOf(model).constructor;
     const desc = Resource.describe(resource);
@@ -19,16 +51,7 @@ export class SQLiteDriver extends ResourceDriver {
     const columns = fields.map(f => f.name);
     const values = Array(columns.length).fill('?').join(',');
     const row = fields.map(field => {
-      let value = model[field.name] || field.defaultValue || '';
-      if (field.type === Number) {
-        value = Number(value);
-      }
-
-      if (field.type === Object) {
-        value = JSON.stringify(value);
-      }
-
-      return value;
+      return SQLiteDriver.serialize(field.type, model[field.name] || field.defaultValue || '');
     });
 
     return new Promise<number>((resolve, reject) => {
@@ -98,7 +121,7 @@ export class SQLiteDriver extends ResourceDriver {
     const desc = Resource.describe(resource);
     const columns = desc.fields.map(f => f.name);
     const conditions = query.toJSON();
-    const where = conditions.map(([field, operator]) => `${field} ${operator} ?`);
+    const where = conditions.map(([field, operator]) => `${String(field)} ${operator} ?`);
     const args = conditions.map(c => c[2]);
     const queryStr = `SELECT ${columns} FROM ${desc.name}${where.length ? ' WHERE ' + where.join(' AND ') : ''}`;
 
@@ -117,18 +140,9 @@ export class SQLiteDriver extends ResourceDriver {
   private createModel(model: typeof Resource, data: any) {
     const desc = Resource.describe(model);
     const modelData = {};
+
     desc.fields.forEach(field => {
-      let value = data[field.name];
-
-      if (field.type === Number) {
-        value = Number(value);
-      }
-
-      if (field.type === Object) {
-        value = JSON.parse(value);
-      }
-
-      modelData[field.name] = value;
+      modelData[field.name] = SQLiteDriver.parse(field.type, data[field.name] || field.defaultValue || '');
     });
 
     return new model(modelData);
@@ -155,15 +169,13 @@ export class SQLiteDriver extends ResourceDriver {
         ')'
       ].join('');
 
-      this.db.serialize(() =>
-        this.db.run(sql, (error) => {
-          if (error) {
-            return reject(new Error(`Cannot create table "${name}"`));
-          }
+      this.db.run(sql, (error) => {
+        if (error) {
+          return reject(new Error(`Cannot create table "${name}"`));
+        }
 
-          resolve(undefined);
-        }),
-      );
+        resolve(undefined);
+      });
     });
   }
 }

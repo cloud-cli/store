@@ -214,6 +214,7 @@ describe('sqlite driver', () => {
         @Primary() @Property(Number) id: number;
         @Unique() @NotNull() @Property(String) name: string;
         @Property(Number, 0) strength: number;
+        @Property(Boolean, false) dead: boolean;
         @Property(Object) properties: { superPowers: string[] };
       }
 
@@ -221,6 +222,7 @@ describe('sqlite driver', () => {
       const heroes: Partial<Hero>[] = [
         {
           name: 'Tony',
+          dead: true,
           properties: { superPowers: ['suit'] }
         },
 
@@ -241,6 +243,7 @@ describe('sqlite driver', () => {
 
       expect(tonyStark).not.toBeUndefined();
       expect(tonyStark.id).toBe(1);
+      expect(tonyStark.dead).toBe(true);
 
       const tonyStarkById = await new Hero({ id: 1 }).find();
       expect(tonyStarkById).toEqual(tonyStark);
