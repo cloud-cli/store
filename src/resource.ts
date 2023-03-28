@@ -26,7 +26,7 @@ function getMetadataOf(target: any, property?: string | symbol) {
 
 export type ColumnType = typeof String | typeof Number | typeof Object | typeof Boolean;
 export type ColumnValue = string | number | boolean;
-type ConstructorOf<T> = { new(...args: any[]): T; prototype: T };
+export type ConstructorOf<T> = { new(...args: any[]): T; prototype: T };
 
 export interface TableColumn {
   name: string;
@@ -135,7 +135,7 @@ export class Resource {
     Resource.driver = driver;
   }
 
-  static describe(resource: typeof Resource): ResourceDescription {
+  static describe(resource: ConstructorOf<Resource>): ResourceDescription {
     const meta = getMetadataOf(resource);
     const name = meta.get(resourceName) as string;
 
@@ -149,7 +149,7 @@ export class Resource {
 
     if (!fields.find(f => f.primary)) {
       fields.unshift({
-        name: 'oid',
+        name: 'id',
         type: Number,
         primary: true,
       });
@@ -182,7 +182,7 @@ export class Resource {
     return Resource.driver.remove(this);
   }
 
-  async find(): Promise<Resource> {
+  async find(): Promise<this> {
     return Resource.driver.find(this);
   }
 }
@@ -192,5 +192,5 @@ export abstract class ResourceDriver {
   abstract save<T extends Resource>(model: T): Promise<number>;
   abstract remove<T extends Resource>(model: T): Promise<void>;
   abstract find<T extends Resource>(model: T): Promise<T>;
-  abstract findAll<M extends Resource>(resource: ConstructorOf<Resource>, query: Query<M>): Promise<M[]>;
+  abstract findAll<M extends Resource>(resource: ConstructorOf<M>, query: Query<M>): Promise<M[]>;
 }

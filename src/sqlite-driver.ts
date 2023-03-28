@@ -1,5 +1,5 @@
 import sqlite3 from 'sqlite3';
-import type { ColumnType, ColumnValue, TableColumn } from './resource.js';
+import type { ColumnType, ColumnValue, ConstructorOf, TableColumn } from './resource.js';
 import { Query, Resource, ResourceDriver } from './resource.js';
 
 
@@ -56,7 +56,7 @@ export class SQLiteDriver extends ResourceDriver {
 
     return new Promise<number>((resolve, reject) => {
       this.db
-        .prepare(`INSERT INTO ${desc.name} (${columns}) VALUES (${values})`)
+        .prepare(`REPLACE INTO ${desc.name} (${columns}) VALUES (${values})`)
         .run(row, (error: any) => {
           if (error) {
             return reject(new Error('Cannot store item: ' + error.message));
@@ -115,7 +115,7 @@ export class SQLiteDriver extends ResourceDriver {
   }
 
   async findAll<M extends Resource>(
-    resource: typeof Resource,
+    resource: ConstructorOf<M>,
     query: Query<M>,
   ): Promise<M[]> {
     const desc = Resource.describe(resource);
@@ -137,7 +137,7 @@ export class SQLiteDriver extends ResourceDriver {
     });
   }
 
-  private createModel(model: typeof Resource, data: any) {
+  private createModel(model: ConstructorOf<Resource>, data: any) {
     const desc = Resource.describe(model);
     const modelData = {};
 

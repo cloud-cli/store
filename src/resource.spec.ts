@@ -97,7 +97,7 @@ describe('Resource', () => {
       const description = Resource.describe(User);
       expect(description).toEqual({
         name: 'user',
-        fields: [{ name: 'oid', primary: true, type: Number }]
+        fields: [{ name: 'id', primary: true, type: Number }]
       });
     });
 

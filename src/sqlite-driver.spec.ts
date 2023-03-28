@@ -26,7 +26,7 @@ describe('sqlite driver', () => {
       const db = setup();
       await Resource.create(User);
 
-      expect(db.run).toHaveBeenCalledWith('CREATE TABLE IF NOT EXISTS user (oid INTEGER, name TEXT, alive INTEGER, PRIMARY KEY(oid))', expect.any(Function));
+      expect(db.run).toHaveBeenCalledWith('CREATE TABLE IF NOT EXISTS user (id INTEGER, name TEXT, alive INTEGER, PRIMARY KEY(id))', expect.any(Function));
     });
 
     it('should throw an error if primary key is invalid', async () => {
@@ -161,7 +161,7 @@ describe('sqlite driver', () => {
       const id = await group.save();
 
       expect(id).toBe(123);
-      expect(db.prepare).toHaveBeenCalledWith('INSERT INTO group (name,type,enabled) VALUES (?,?,?)');
+      expect(db.prepare).toHaveBeenCalledWith('REPLACE INTO group (name,type,enabled) VALUES (?,?,?)');
       expect(db.all).toHaveBeenCalledWith('SELECT last_insert_rowid() as id', expect.any(Function));
       expect(db.run).toHaveBeenCalledWith(['group', '', 1], expect.any(Function));
     });
@@ -257,6 +257,12 @@ describe('sqlite driver', () => {
       await tonyStark.remove();
       const [drStranger] = await Resource.find(Hero, new Query());
       expect(drStranger.properties).toEqual(heroes[1].properties);
+
+      drStranger.dead = true;
+      await drStranger.save();
+
+      const [deadDrStranger] = await Resource.find(Hero, new Query());
+      expect(deadDrStranger.dead).toBe(true);
     });
   });
 });
