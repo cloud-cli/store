@@ -1,15 +1,16 @@
-import sqlite3 from 'sqlite3';
+import SQLite, { Database } from 'better-sqlite3';
 import type { ColumnType, ColumnValue, ConstructorOf, TableColumn } from './resource.js';
 import { Query, Resource, ResourceDriver } from './resource.js';
 import { Logger } from './logger.js';
 
 export class SQLiteDriver extends ResourceDriver {
-  readonly db: sqlite3.Database;
+  readonly db: Database;
 
   /* istanbul ignore next */
   constructor(path = process.cwd() + 'cloud.db') {
     super();
-    this.db = new sqlite3.Database(path);
+    this.db = new SQLite(path);
+    this.db.pragma('journal_mode = WAL');
   }
 
   static parse(type: ColumnType, value: ColumnValue) {
@@ -57,17 +58,14 @@ export class SQLiteDriver extends ResourceDriver {
     return new Promise<number>((resolve, reject) => {
       const sql = `REPLACE INTO ${desc.name} (${columns}) VALUES (${values})`;
       Logger.debug(sql, row);
-      this.db
-        .prepare(sql)
-        .run(row, (error: any) => {
-          if (error) {
-            return reject(new Error('Cannot store item: ' + error.message));
-          }
 
-          this.db.all('SELECT last_insert_rowid() as id', (_error, rows: any[]) => {
-            resolve(rows[0].id);
-          });
-        });
+      try {
+        const statement = this.db.prepare(sql);
+        const { lastInsertRowid } = statement.run(row);
+        resolve(Number(lastInsertRowid));
+      } catch (error) {
+        reject(new Error('Cannot store item: ' + error.message))
+      }
     });
   }
 
@@ -79,14 +77,14 @@ export class SQLiteDriver extends ResourceDriver {
       const primary = desc.fields.find(field => field.primary);
       const query = `DELETE FROM ${desc.name} WHERE ${primary.name} = ?`;
       Logger.debug(query, model[primary.name]);
-      this.db
-        .prepare(query)
-        .run([model[primary.name]], (error) => {
-          if (error) {
-            return reject(new Error('Unable to remove: ' + error.message));
-          }
-          resolve();
-        });
+
+      try {
+        const statement = this.db.prepare(query);
+        statement.run([model[primary.name]]);
+        resolve();
+      } catch (error) {
+        reject(new Error('Unable to remove: ' + error.message))
+      }
     });
   }
 
@@ -99,22 +97,21 @@ export class SQLiteDriver extends ResourceDriver {
 
     const query = `SELECT ${columns} FROM ${desc.name} WHERE ${primary.name} = ? LIMIT 1`;
     Logger.debug(query, [id]);
+
     return new Promise<T>((resolve, reject) => {
-      this.db
-        .prepare(query)
-        .all([id], (error, lines) => {
-          if (!lines.length) {
-            error = new Error('Not found');
-          }
+      try {
+        const statement = this.db.prepare(query);
+        const result = statement.get([id]);
 
-          if (error) {
-            reject(error);
-            return
-          }
+        if (!result) {
+          reject(new Error('Not found'));
+          return;
+        }
 
-          const found = this.createModel(Model, lines[0]) as T;
-          resolve(found);
-        });
+        resolve(this.createModel(Model, result) as T);
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 
@@ -129,15 +126,15 @@ export class SQLiteDriver extends ResourceDriver {
     const args = conditions.map(c => c[2]);
     const queryStr = `SELECT ${columns} FROM ${desc.name}${where.length ? ' WHERE ' + where.join(' AND ') : ''}`;
     Logger.debug(queryStr, args);
-    return new Promise((resolve, reject) => {
-      this.db.prepare(queryStr)
-        .all(args, (error, value) => {
-          if (error) {
-            return reject(error);
-          }
 
-          resolve(value.map(data => this.createModel(resource, data)) as M[]);
-        });
+    return new Promise((resolve, reject) => {
+      try {
+        const statement = this.db.prepare(queryStr);
+        const value = statement.all(args);
+        resolve(value.map(data => this.createModel(resource, data)) as M[])
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 
@@ -173,13 +170,14 @@ export class SQLiteDriver extends ResourceDriver {
         ')'
       ].join('');
       Logger.debug(sql);
-      this.db.run(sql, (error) => {
-        if (error) {
-          return reject(new Error(`Cannot create table "${name}"`));
-        }
 
+      try {
+        const s = this.db.prepare(sql);
+        s.run([]);
         resolve(undefined);
-      });
+      } catch (error) {
+        return reject(new Error(`Cannot create table "${name}"`));
+      }
     });
   }
 }

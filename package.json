@@ -27,9 +27,9 @@
     "@cloud-cli/jest-config": "^1.0.0",
     "@cloud-cli/prettier-config": "^1.0.0",
     "@cloud-cli/typescript-config": "^1.0.1",
-    "sqlite3": "^5.1.6"
+    "@types/better-sqlite3": "^7.6.3"
   },
-  "peerDependencies": {
-    "sqlite3": "^5.1.0"
+  "dependencies": {
+    "better-sqlite3": "^8.2.0"
   }
 }

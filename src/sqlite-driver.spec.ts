@@ -1,17 +1,19 @@
-import sqlite3 from 'sqlite3';
+import { Database } from 'better-sqlite3';
 import { SQLiteDriver, Resource, Property, Query, Model, NotNull, Unique, Primary } from './index';
 
-function setup(all: any = [null, []], run = []) {
+function setup(all: any = [null, []], run = [], get = {}) {
   const driver = new SQLiteDriver(':memory:');
-  const db: sqlite3.Database = driver['db'];
+  const db: Database = driver['db'];
 
-  jest.spyOn(db, 'all').mockImplementation((_q, cb) => cb(...all));
-  jest.spyOn(db, 'prepare').mockImplementation(() => db as any);
-  jest.spyOn(db, 'run').mockImplementation((_q, cb) => cb(...run));
-
+  const mock = {
+    get: jest.fn(() => { if (get && get instanceof Error) { throw get; } return get; }),
+    all: jest.fn(() => { if (all[0]) { throw all[0]; } return all[1]; }),
+    run: jest.fn(() => { if (run[0]) { throw run[0]; } return { lastInsertRowid: 1 }; }),
+  };
+  jest.spyOn(db, 'prepare').mockImplementation(() => mock as any);
   Resource.use(driver);
 
-  return db;
+  return { db, mock };
 }
 
 describe('sqlite driver', () => {
@@ -23,10 +25,11 @@ describe('sqlite driver', () => {
         @Property(Boolean) alive: boolean;
       }
 
-      const db = setup();
+      const { db, mock } = setup();
       await Resource.create(User);
 
-      expect(db.run).toHaveBeenCalledWith('CREATE TABLE IF NOT EXISTS user (id INTEGER, name TEXT, alive INTEGER, PRIMARY KEY(id))', expect.any(Function));
+      expect(db.prepare).toHaveBeenCalledWith('CREATE TABLE IF NOT EXISTS user (id INTEGER, name TEXT, alive INTEGER, PRIMARY KEY(id))');
+      expect(mock.run).toHaveBeenCalledWith([]);
     });
 
     it('should throw an error if primary key is invalid', async () => {
@@ -50,7 +53,7 @@ describe('sqlite driver', () => {
     });
 
     it('should add constraits and options to columns', async () => {
-      const db = setup();
+      const { db } = setup();
       @Model('user')
       class User extends Resource {
         @Primary() @Property(Number) id: number;
@@ -59,7 +62,7 @@ describe('sqlite driver', () => {
       }
 
       await Resource.create(User);
-      expect(db.run).toHaveBeenCalledWith('CREATE TABLE IF NOT EXISTS user (id INTEGER, name TEXT NOT NULL, age INTEGER, UNIQUE(age), PRIMARY KEY(id))', expect.any(Function));
+      expect(db.prepare).toHaveBeenCalledWith('CREATE TABLE IF NOT EXISTS user (id INTEGER, name TEXT NOT NULL, age INTEGER, UNIQUE(age), PRIMARY KEY(id))');
     });
   });
 
@@ -71,13 +74,13 @@ describe('sqlite driver', () => {
         @NotNull() @Property(String) name: string;
       }
 
-      const db = setup([null, [{ id: 123, name: 'joe' }]]);
+      const { db, mock } = setup([null, [{ id: 123, name: 'joe' }]]);
       const user = new User({ id: 123 });
       const found = await user.find();
 
       expect(found).not.toBe(user);
       expect(db.prepare).toHaveBeenCalledWith('SELECT id,name FROM user WHERE id = ? LIMIT 1');
-      expect(db.all).toHaveBeenCalledWith([123], expect.any(Function));
+      expect(mock.get).toHaveBeenCalledWith([123]);
     });
 
     it('should throw error if item was not found', async () => {
@@ -87,9 +90,21 @@ describe('sqlite driver', () => {
         @NotNull() @Property(String) name: string;
       }
 
-      setup([null, []]);
+      setup(undefined, undefined, null);
       const user = new User({ id: 123 });
       await expect(user.find()).rejects.toThrowError('Not found');
+    });
+
+    it('should throw error if query failed', async () => {
+      @Model('user')
+      class User extends Resource {
+        @Primary() @Property(Number) id: number;
+        @NotNull() @Property(String) name: string;
+      }
+
+      setup(undefined, undefined, new Error('boom'));
+      const user = new User({ id: 123 });
+      await expect(user.find()).rejects.toThrowError('boom');
     });
   });
 
@@ -102,13 +117,13 @@ describe('sqlite driver', () => {
         @Primary() @Property(Number) id: number;
       }
 
-      const db = setup([null, []]);
+      const { db } = setup([null, []]);
 
       const query = new Query<Product>();
       const found = Resource.find<Product>(Product, query);
 
       expect(db.prepare).toHaveBeenCalledWith('SELECT id FROM product');
-      expect(found).resolves.toEqual([]);
+      await expect(found).resolves.toEqual([]);
     });
 
     it('should select specific items from a table', async () => {
@@ -121,7 +136,7 @@ describe('sqlite driver', () => {
       }
 
       const user: Partial<User> = { name: 'Joe', age: 30, id: 1 };
-      const db = setup([null, [user]]);
+      const { db, mock } = setup([null, [user]]);
 
       const query = new Query<User>().where('name').is('Joe');
       const found = Resource.find<User>(User, query);
@@ -129,7 +144,7 @@ describe('sqlite driver', () => {
       await expect(found).resolves.toEqual([new User(user)]);
 
       expect(db.prepare).toHaveBeenCalledWith('SELECT id,name,age FROM user WHERE name = ?');
-      expect(db.all).toHaveBeenCalledWith(['Joe'], expect.any(Function));
+      expect(mock.all).toHaveBeenCalledWith(['Joe']);
     });
 
     it('should reject if listing items failed', async () => {
@@ -147,7 +162,7 @@ describe('sqlite driver', () => {
 
   describe('save()', () => {
     it('should add items to a table', async () => {
-      const db = setup([null, [{ id: 123 }]]);
+      const { db, mock } = setup([null, [{ id: 1 }]]);
 
       @Model('group')
       class Group extends Resource {
@@ -160,10 +175,9 @@ describe('sqlite driver', () => {
       const group = new Group({ name: 'group', enabled: true });
       const id = await group.save();
 
-      expect(id).toBe(123);
+      expect(id).toBe(1);
       expect(db.prepare).toHaveBeenCalledWith('REPLACE INTO group (name,type,enabled) VALUES (?,?,?)');
-      expect(db.all).toHaveBeenCalledWith('SELECT last_insert_rowid() as id', expect.any(Function));
-      expect(db.run).toHaveBeenCalledWith(['group', '', 1], expect.any(Function));
+      expect(mock.run).toHaveBeenCalledWith(['group', '', 1]);
     });
 
     it('should reject if item cannot be stored', async () => {
@@ -173,13 +187,12 @@ describe('sqlite driver', () => {
       class Group extends Resource { }
       const group = new Group({});
       await expect(group.save()).rejects.toThrowError(new Error('Cannot store item: Nope'));
-
     });
   });
 
   describe('remove()', () => {
     it('should remove items from a table', async () => {
-      const db = setup();
+      const { db, mock } = setup();
       @Model('group')
       class Group extends Resource {
         @Primary() @Property(Number) oid: number;
@@ -190,7 +203,7 @@ describe('sqlite driver', () => {
       await user.remove();
 
       expect(db.prepare).toHaveBeenCalledWith('DELETE FROM group WHERE oid = ?');
-      expect(db.run).toHaveBeenCalledWith([123], expect.any(Function));
+      expect(mock.run).toHaveBeenCalledWith([123]);
     });
 
     it('should reject if removal failed', async () => {
