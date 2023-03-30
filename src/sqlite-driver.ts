@@ -1,7 +1,7 @@
 import sqlite3 from 'sqlite3';
 import type { ColumnType, ColumnValue, ConstructorOf, TableColumn } from './resource.js';
 import { Query, Resource, ResourceDriver } from './resource.js';
-
+import { Logger } from './logger.js';
 
 export class SQLiteDriver extends ResourceDriver {
   readonly db: sqlite3.Database;
@@ -55,8 +55,10 @@ export class SQLiteDriver extends ResourceDriver {
     });
 
     return new Promise<number>((resolve, reject) => {
+      const sql = `REPLACE INTO ${desc.name} (${columns}) VALUES (${values})`;
+      Logger.debug(sql, row);
       this.db
-        .prepare(`REPLACE INTO ${desc.name} (${columns}) VALUES (${values})`)
+        .prepare(sql)
         .run(row, (error: any) => {
           if (error) {
             return reject(new Error('Cannot store item: ' + error.message));
@@ -76,7 +78,7 @@ export class SQLiteDriver extends ResourceDriver {
     return new Promise((resolve, reject) => {
       const primary = desc.fields.find(field => field.primary);
       const query = `DELETE FROM ${desc.name} WHERE ${primary.name} = ?`;
-
+      Logger.debug(query, model[primary.name]);
       this.db
         .prepare(query)
         .run([model[primary.name]], (error) => {
@@ -95,9 +97,11 @@ export class SQLiteDriver extends ResourceDriver {
     const primary = desc.fields.find(field => field.primary);
     const id = model[primary.name];
 
+    const query = `SELECT ${columns} FROM ${desc.name} WHERE ${primary.name} = ? LIMIT 1`;
+    Logger.debug(query, [id]);
     return new Promise<T>((resolve, reject) => {
       this.db
-        .prepare(`SELECT ${columns} FROM ${desc.name} WHERE ${primary.name} = ? LIMIT 1`)
+        .prepare(query)
         .all([id], (error, lines) => {
           if (!lines.length) {
             error = new Error('Not found');
@@ -124,7 +128,7 @@ export class SQLiteDriver extends ResourceDriver {
     const where = conditions.map(([field, operator]) => `${String(field)} ${operator} ?`);
     const args = conditions.map(c => c[2]);
     const queryStr = `SELECT ${columns} FROM ${desc.name}${where.length ? ' WHERE ' + where.join(' AND ') : ''}`;
-
+    Logger.debug(queryStr, args);
     return new Promise((resolve, reject) => {
       this.db.prepare(queryStr)
         .all(args, (error, value) => {
@@ -168,7 +172,7 @@ export class SQLiteDriver extends ResourceDriver {
         ', PRIMARY KEY(' + primary[0].name + ')',
         ')'
       ].join('');
-
+      Logger.debug(sql);
       this.db.run(sql, (error) => {
         if (error) {
           return reject(new Error(`Cannot create table "${name}"`));
