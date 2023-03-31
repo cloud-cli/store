@@ -120,11 +120,10 @@ export class SQLiteDriver extends ResourceDriver {
     query: Query<M>,
   ): Promise<M[]> {
     const desc = Resource.describe(resource);
-    const columns = desc.fields.map(f => f.name);
     const conditions = query.toJSON();
     const where = conditions.map(([field, operator]) => `${String(field)} ${operator} ?`);
     const args = conditions.map(c => c[2]);
-    const queryStr = `SELECT ${columns} FROM ${desc.name}${where.length ? ' WHERE ' + where.join(' AND ') : ''}`;
+    const queryStr = `SELECT * FROM ${desc.name}${where.length ? ' WHERE ' + where.join(' AND ') : ''}`;
     Logger.debug(queryStr, args);
 
     return new Promise((resolve, reject) => {

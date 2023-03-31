@@ -122,7 +122,7 @@ describe('sqlite driver', () => {
       const query = new Query<Product>();
       const found = Resource.find<Product>(Product, query);
 
-      expect(db.prepare).toHaveBeenCalledWith('SELECT id FROM product');
+      expect(db.prepare).toHaveBeenCalledWith('SELECT * FROM product');
       await expect(found).resolves.toEqual([]);
     });
 
@@ -143,7 +143,7 @@ describe('sqlite driver', () => {
 
       await expect(found).resolves.toEqual([new User(user)]);
 
-      expect(db.prepare).toHaveBeenCalledWith('SELECT id,name,age FROM user WHERE name = ?');
+      expect(db.prepare).toHaveBeenCalledWith('SELECT * FROM user WHERE name = ?');
       expect(mock.all).toHaveBeenCalledWith(['Joe']);
     });
 
