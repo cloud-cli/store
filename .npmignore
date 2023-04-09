@@ -3,3 +3,4 @@ src/
 jest*.mjs
 tsconfig.json
 dist/*.spec.*
+.github/
