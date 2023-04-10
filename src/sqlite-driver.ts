@@ -50,10 +50,20 @@ export class SQLiteDriver extends ResourceDriver {
     const desc = Resource.describe(resource);
     const fields = desc.fields.filter(field => !field.primary);
     const columns = fields.map(f => f.name);
-    const values = Array(columns.length).fill('?').join(',');
+
     const row = fields.map(field => {
       return SQLiteDriver.serialize(field.type, model[field.name] || field.defaultValue || '');
     });
+
+    const primary = desc.fields.find(field => field.primary);
+    const isUpdate = model[primary.name] !== undefined;
+
+    if (isUpdate) {
+      columns.unshift(primary.name);
+      row.unshift(model[primary.name]);
+    }
+
+    const values = Array(columns.length).fill('?').join(',');
 
     return new Promise<number>((resolve, reject) => {
       const sql = `REPLACE INTO ${desc.name} (${columns}) VALUES (${values})`;
