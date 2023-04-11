@@ -7,7 +7,7 @@ export class SQLiteDriver extends ResourceDriver {
   readonly db: Database;
 
   /* istanbul ignore next */
-  constructor(path = process.cwd() + 'cloud.db') {
+  constructor(path = process.cwd() + '/cloud.db') {
     super();
     this.db = new SQLite(path);
     this.db.pragma('journal_mode = WAL');
