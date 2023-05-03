@@ -78,6 +78,7 @@ export function Property(type: ColumnType, defaultValue?: any): any {
 const operators = {
   is: '=',
   isNot: '!=',
+  isLike: 'like',
   gt: '>',
   lt: '<',
   gte: '>=',
