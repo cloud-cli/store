@@ -175,7 +175,7 @@ describe('sqlite driver', () => {
       const group = new Group({ name: 'group', enabled: true });
       const id = await group.save();
 
-      expect(id).toBe(1);
+      expect(id).toBe('1');
       expect(db.prepare).toHaveBeenCalledWith('REPLACE INTO group (name,type,enabled) VALUES (?,?,?)');
       expect(mock.run).toHaveBeenCalledWith(['group', '', 1]);
     });
@@ -252,7 +252,7 @@ describe('sqlite driver', () => {
         ids.push(await new Hero(hero).save());
       }
 
-      expect(ids).toEqual([1, 2]);
+      expect(ids).toEqual(['1', '2']);
       const savedHeroes = await Resource.find(Hero, new Query<Hero>());
 
       expect(savedHeroes.length).toBe(2);

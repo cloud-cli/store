@@ -26,7 +26,7 @@ function getMetadataOf(target: any, property?: string | symbol) {
 
 export type ColumnType = typeof String | typeof Number | typeof Object | typeof Boolean;
 export type ColumnValue = string | number | boolean;
-export type ConstructorOf<T> = { new(...args: any[]): T; prototype: T };
+export type ConstructorOf<T> = { new (...args: any[]): T; prototype: T };
 
 export interface TableColumn {
   name: string;
@@ -136,7 +136,10 @@ export class Resource {
     Resource.driver = driver;
   }
 
-  static describe(resource: ConstructorOf<Resource>): ResourceDescription {
+  static describe<T>(resourceOrModel: ConstructorOf<Resource> | T): ResourceDescription {
+    const resource: ConstructorOf<Resource> =
+      typeof resourceOrModel !== 'function' ? Object.getPrototypeOf(resourceOrModel).constructor : resourceOrModel;
+
     const meta = getMetadataOf(resource);
     const name = meta.get(resourceName) as string;
 
@@ -148,7 +151,7 @@ export class Resource {
       .filter((f) => f[0] !== resourceName)
       .map((f) => f[1]) as TableColumn[];
 
-    if (!fields.find(f => f.primary)) {
+    if (!fields.find((f) => f.primary)) {
       fields.unshift({
         name: 'id',
         type: Number,
@@ -175,7 +178,7 @@ export class Resource {
 
   static getMetadataOf = getMetadataOf;
 
-  async save(): Promise<number> {
+  async save(): Promise<string> {
     return Resource.driver.save(this);
   }
 
@@ -190,7 +193,7 @@ export class Resource {
 
 export abstract class ResourceDriver {
   abstract create(resource: typeof Resource): Promise<void>;
-  abstract save<T extends Resource>(model: T): Promise<number>;
+  abstract save<T extends Resource>(model: T): Promise<string>;
   abstract remove<T extends Resource>(model: T): Promise<void>;
   abstract find<T extends Resource>(model: T): Promise<T>;
   abstract findAll<M extends Resource>(resource: ConstructorOf<M>, query: Query<M>): Promise<M[]>;

@@ -46,8 +46,7 @@ export class SQLiteDriver extends ResourceDriver {
   }
 
   async save<T extends Resource>(model: T) {
-    const resource = Object.getPrototypeOf(model).constructor;
-    const desc = Resource.describe(resource);
+    const desc = Resource.describe(model);
     const fields = desc.fields.filter(field => !field.primary);
     const columns = fields.map(f => f.name);
 
@@ -65,14 +64,14 @@ export class SQLiteDriver extends ResourceDriver {
 
     const values = Array(columns.length).fill('?').join(',');
 
-    return new Promise<number>((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       const sql = `REPLACE INTO ${desc.name} (${columns}) VALUES (${values})`;
       Logger.debug(sql, row);
 
       try {
         const statement = this.db.prepare(sql);
         const { lastInsertRowid } = statement.run(row);
-        resolve(Number(lastInsertRowid));
+        resolve(String(lastInsertRowid));
       } catch (error) {
         reject(new Error('Cannot store item: ' + error.message))
       }
