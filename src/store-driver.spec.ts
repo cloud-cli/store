@@ -72,18 +72,19 @@ describe('store driver', () => {
     class Fruit extends Resource {
       @Primary() @Property(String) name: string;
       @Property(String) color: string;
+      @Property(Boolean, true) edible: string;
     }
 
     it('should find an item by its primary key', async () => {
       const { fetch } = setup();
-      const found = new Fruit({ name: 'mango', color: 'yellow' });
+      const found = { name: 'mango', color: 'yellow' };
       const fruit = new Fruit({ name: 'mango' });
       fetch.mockImplementationOnce(() => Promise.resolve({ ok: true, json: () => found }));
 
       const result = await fruit.find();
 
       expect(result).not.toBe(fruit);
-      expect(result).toBe(found);
+      expect(result).toEqual(new Fruit({ name: 'mango', color: 'yellow', edible: true }));
       expect(fetch).toHaveBeenCalledWith('http://localhost:1234/store-id/fruit/mango');
     });
 
@@ -160,18 +161,19 @@ describe('store driver', () => {
   describe('findAll()', () => {
     @Model('person')
     class Person extends Resource {
+      @Primary() @Property(String) uid: string;
       @Property(String) name: string;
       @Property(Number) age: number;
     }
 
     it('should find all items that match the query', async () => {
       const { fetch } = setup();
-      const items = [
-        new Person({ age: 25, name: 'Joebert' }),
-        new Person({ age: 21, name: 'Joe' }),
-        new Person({ age: 30, name: 'Paul' }),
-        new Person({ age: 5, name: 'Joelle' }),
-      ];
+      const items = {
+        1: new Person({ uid: '1', age: 25, name: 'Joebert' }),
+        2: new Person({ uid: '2', age: 21, name: 'Joe' }),
+        3: new Person({ uid: '3', age: 30, name: 'Paul' }),
+        4: new Person({ uid: '4', age: 5, name: 'Joelle' }),
+      };
 
       fetch.mockImplementationOnce(() => Promise.resolve({ ok: true, json: () => Promise.resolve(items) }));
       const query = new Query<Person>();
@@ -185,7 +187,7 @@ describe('store driver', () => {
       // invalid operator is ignored
       query.push('age', 'nope', '');
 
-      await expect(Resource.find(Person, query)).resolves.toEqual([new Person({ age: 21, name: 'Joe' })]);
+      await expect(Resource.find(Person, query)).resolves.toEqual([new Person({ uid: '2', age: 21, name: 'Joe' })]);
 
       expect(fetch).toHaveBeenCalledWith('http://localhost:1234/store-id/person');
     });

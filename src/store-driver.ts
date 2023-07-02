@@ -57,10 +57,11 @@ export class StoreDriver extends ResourceDriver {
 
   async find<T extends Resource>(model: T): Promise<T> {
     const { url } = this.getUrl(model);
+    const resource = Object.getPrototypeOf(model).constructor as ConstructorOf<T>;
     const remote = await StoreDriver.fetch(url);
 
     if (remote.ok) {
-      return remote.json();
+      return this.createModel(resource, await remote.json());
     }
 
     throw new Error('Not found');
@@ -74,7 +75,8 @@ export class StoreDriver extends ResourceDriver {
     const remote = await StoreDriver.fetch(url);
 
     if (remote.ok) {
-      const items = await remote.json();
+      const map = await remote.json();
+      const items: M[] = Object.values(map).map((raw) => this.createModel(resource, raw));
       return this.filter(items, query);
     }
 
@@ -128,5 +130,16 @@ export class StoreDriver extends ResourceDriver {
       default:
         return true;
     }
+  }
+
+  private createModel<M extends Resource>(model: ConstructorOf<M>, data: any) {
+    const desc = Resource.describe(model);
+    const modelData = {};
+
+    desc.fields.forEach((field) => {
+      modelData[field.name] = data[field.name] ?? field.defaultValue;
+    });
+
+    return new model(modelData) as M;
   }
 }
