@@ -1,4 +1,5 @@
-import { ConstructorOf, Query, Resource, ResourceDriver } from './resource';
+import type { ConstructorOf } from './resource.js';
+import { Query, Resource, ResourceDriver } from './resource.js';
 import { randomUUID } from 'crypto';
 
 const headers = { 'content-type': 'application/json' };
