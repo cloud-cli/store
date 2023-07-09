@@ -8,7 +8,7 @@ A tiny abstraction of database tables
 import { Model, Primary, Property, Query, Resource, Unique, Model, SQLiteDriver } from '@cloud-cli/store';
 
 // initialize
-Resource.use(new SQLiteDriver(':memory:'));
+await Resource.use(new SQLiteDriver(':memory:'));
 
 // create a resource
 @Model('user')
@@ -27,6 +27,10 @@ const users = await Resource.find(User, query);
 
 // remove an item
 await users[0].remove();
+
+// find John by id
+const user = new User({ id });
+const john = await user.find();
 ```
 
 ## Storage Drivers
