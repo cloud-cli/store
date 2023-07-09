@@ -28,3 +28,23 @@ const users = await Resource.find(User, query);
 // remove an item
 await users[0].remove();
 ```
+
+## Storage Drivers
+
+SQLiteDriver:
+
+```ts
+// path to a file, or `:memory:` for in memory storage.
+// if not provided, defaults to `process.env.SQLITE_DB_PATH`
+
+const driver = new SQLiteDriver('path/to/file.db');
+```
+
+StoreDriver (for a [JSON store](https://github.com/cloud-cli/json-store)):
+
+```ts
+// address of Store API to use.
+// if not provided, defaults to `process.env.STORE_URL`
+
+const driver = new StoreDriver('https://store.io/hash');
+```
