@@ -21,7 +21,7 @@ export class StoreDriver extends ResourceDriver {
 
     try {
       await StoreDriver.fetch(url, {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: '{}',
       });
