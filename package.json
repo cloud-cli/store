@@ -29,9 +29,9 @@
     "@cloud-cli/typescript-config": "^1.0.1",
     "@types/better-sqlite3": "^7.6.3",
     "@types/node": "^20.3.3",
-    "better-sqlite3": "^8.2.0"
+    "better-sqlite3": "^11.5.0"
   },
   "peerDependencies": {
-    "better-sqlite3": "^8.2.0"
+    "better-sqlite3": "^11.0.0"
   }
 }

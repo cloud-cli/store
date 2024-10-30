@@ -10,7 +10,7 @@ beforeAll(() => {
 
 function setup() {
   const driver = new StoreDriver(storeUrl);
-  const fetch = StoreDriver.fetch as jest.SpyInstance;
+  const fetch = StoreDriver.fetch as unknown as jest.SpyInstance;
   const uid = StoreDriver.uid as unknown as jest.SpyInstance;
 
   fetch.mockReset();
@@ -46,7 +46,7 @@ describe('store driver', () => {
 
       await Resource.create(User);
       expect(fetch).toHaveBeenCalledWith('http://localhost:1234/store-id/user/0', {
-        method: 'POST',
+        method: 'PUT',
         body: '{}',
         headers,
       });
