@@ -77,7 +77,7 @@ export class StoreDriver extends ResourceDriver {
 
     if (remote.ok) {
       const map = await remote.json();
-      const items: M[] = Object.values(map).map((raw) => this.createModel(resource, raw));
+      const items: M[] = Object.values(map).map((raw) => raw ? this.createModel(resource, raw) : null).filter(Boolean);
       return this.filter(items, query);
     }
 
@@ -138,7 +138,7 @@ export class StoreDriver extends ResourceDriver {
     const modelData = {};
 
     desc.fields.forEach((field) => {
-      modelData[field.name] = data[field.name] ?? field.defaultValue;
+      modelData[field.name] = data ? data[field.name] : field.defaultValue;
     });
 
     return new model(modelData) as M;
