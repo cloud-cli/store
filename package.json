@@ -26,7 +26,7 @@
   "devDependencies": {
     "@cloud-cli/prettier-config": "^1.0.0",
     "@cloud-cli/typescript-config": "^1.0.1",
-    "@types/node": "^20.19.43",
+    "@types/node": "^26.1.2",
     "better-sqlite3": "^13.0.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"

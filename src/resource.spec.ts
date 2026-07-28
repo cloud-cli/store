@@ -1,4 +1,4 @@
-import { Model, NotNull, Primary, Property, Query, Resource, ResourceDriver, Unique } from './index';
+import { Model, NotNull, Primary, Property, Query, Resource, ResourceDriver, Unique } from './index.js';
 import { describe, it, expect, vi } from 'vitest';
 
 class Driver extends ResourceDriver {

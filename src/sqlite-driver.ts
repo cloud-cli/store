@@ -47,14 +47,14 @@ export class SQLiteDriver extends ResourceDriver {
 
   async save<T extends Resource>(model: T) {
     const desc = Resource.describe(model);
-    const fields = desc.fields.filter(field => !field.primary);
-    const columns = fields.map(f => f.name);
+    const fields = desc.fields.filter((field) => !field.primary);
+    const columns = fields.map((f) => f.name);
 
-    const row = fields.map(field => {
+    const row = fields.map((field) => {
       return SQLiteDriver.serialize(field.type, model[field.name] || field.defaultValue || '');
     });
 
-    const primary = desc.fields.find(field => field.primary)!;
+    const primary = desc.fields.find((field) => field.primary);
     const isUpdate = model[primary.name] !== undefined;
 
     if (isUpdate) {
@@ -73,7 +73,7 @@ export class SQLiteDriver extends ResourceDriver {
         const { lastInsertRowid } = statement.run(row);
         resolve(String(lastInsertRowid));
       } catch (error) {
-        reject(new Error('Cannot store item: ' + error.message))
+        reject(new Error('Cannot store item: ' + error.message));
       }
     });
   }
@@ -83,7 +83,7 @@ export class SQLiteDriver extends ResourceDriver {
     const desc = Resource.describe(resource);
 
     return new Promise((resolve, reject) => {
-      const primary = desc.fields.find(field => field.primary)!;
+      const primary = desc.fields.find((field) => field.primary);
       const query = `DELETE FROM ${desc.name} WHERE ${primary.name} = ?`;
       Logger.debug(query, model[primary.name]);
 
@@ -92,7 +92,7 @@ export class SQLiteDriver extends ResourceDriver {
         statement.run([model[primary.name]]);
         resolve();
       } catch (error) {
-        reject(new Error('Unable to remove: ' + error.message))
+        reject(new Error('Unable to remove: ' + error.message));
       }
     });
   }
@@ -100,8 +100,8 @@ export class SQLiteDriver extends ResourceDriver {
   async find<T extends Resource>(model: T): Promise<T> {
     const Model = Object.getPrototypeOf(model).constructor;
     const desc = Resource.describe(Model);
-    const columns = desc.fields.map(f => f.name);
-    const primary = desc.fields.find(field => field.primary)!;
+    const columns = desc.fields.map((f) => f.name);
+    const primary = desc.fields.find((field) => field.primary);
     const id = model[primary.name];
 
     const query = `SELECT ${columns} FROM ${desc.name} WHERE ${primary.name} = ? LIMIT 1`;
@@ -124,14 +124,11 @@ export class SQLiteDriver extends ResourceDriver {
     });
   }
 
-  async findAll<M extends Resource>(
-    resource: ConstructorOf<M>,
-    query: Query<M>,
-  ): Promise<M[]> {
+  async findAll<M extends Resource>(resource: ConstructorOf<M>, query: Query<M>): Promise<M[]> {
     const desc = Resource.describe(resource);
     const conditions = query.toJSON();
     const where = conditions.map(([field, operator]) => `${String(field)} ${operator} ?`);
-    const args = conditions.map(c => c[2]);
+    const args = conditions.map((c) => c[2]);
     const queryStr = `SELECT * FROM ${desc.name}${where.length ? ' WHERE ' + where.join(' AND ') : ''}`;
     Logger.debug(queryStr, args);
 
@@ -139,7 +136,7 @@ export class SQLiteDriver extends ResourceDriver {
       try {
         const statement = this.db.prepare(queryStr);
         const value = statement.all(args);
-        resolve(value.map(data => this.createModel(resource, data)) as M[])
+        resolve(value.map((data) => this.createModel(resource, data)) as M[]);
       } catch (error) {
         reject(error);
       }
@@ -150,7 +147,7 @@ export class SQLiteDriver extends ResourceDriver {
     const desc = Resource.describe(model);
     const modelData = {};
 
-    desc.fields.forEach(field => {
+    desc.fields.forEach((field) => {
       modelData[field.name] = SQLiteDriver.parse(field.type, data[field.name] || field.defaultValue || '');
     });
 
@@ -161,9 +158,13 @@ export class SQLiteDriver extends ResourceDriver {
     const desc = Resource.describe(resource);
     const { name } = desc;
     const fields = desc.fields as TableColumn[];
-    const names = fields.map(f => `${f.name} ${f.type === Number || f.type === Boolean ? 'INTEGER' : 'TEXT'}` + (f.notNull && ' NOT NULL' || ''));
-    const unique = fields.filter((field) => field.unique).map(f => f.name);
-    const primary = fields.filter(field => field.primary && field.type === Number);
+    const names = fields.map(
+      (f) =>
+        `${f.name} ${f.type === Number || f.type === Boolean ? 'INTEGER' : 'TEXT'}` +
+        ((f.notNull && ' NOT NULL') || ''),
+    );
+    const unique = fields.filter((field) => field.unique).map((f) => f.name);
+    const primary = fields.filter((field) => field.primary && field.type === Number);
 
     return new Promise((resolve, reject) => {
       if (!primary.length) {
@@ -173,9 +174,9 @@ export class SQLiteDriver extends ResourceDriver {
       const sql = [
         `CREATE TABLE IF NOT EXISTS ${name} (`,
         names.join(', '),
-        (unique.length ? ', UNIQUE(' + unique.join(',') + ')' : ''),
+        unique.length ? ', UNIQUE(' + unique.join(',') + ')' : '',
         ', PRIMARY KEY(' + primary[0].name + ')',
-        ')'
+        ')',
       ].join('');
       Logger.debug(sql);
 
