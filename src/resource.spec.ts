@@ -1,11 +1,12 @@
 import { Model, NotNull, Primary, Property, Query, Resource, ResourceDriver, Unique } from './index';
+import { describe, it, expect, vi } from 'vitest';
 
 class Driver extends ResourceDriver {
-  save = jest.fn();
-  remove = jest.fn();
-  find = jest.fn();
-  findAll = jest.fn();
-  create = jest.fn();
+  save = vi.fn();
+  remove = vi.fn();
+  find = vi.fn();
+  findAll = vi.fn();
+  create = vi.fn();
 }
 
 describe('Resource', () => {
@@ -87,17 +88,19 @@ describe('Resource', () => {
         ],
       });
 
-      expect(() => Resource.describe(class extends Resource { })).toThrowError('Name is missing. Did you add @Model() to your class?');
+      expect(() => Resource.describe(class extends Resource {})).toThrowError(
+        'Name is missing. Did you add @Model() to your class?',
+      );
     });
 
     it('should insert a primary key if not present', () => {
       @Model('user')
-      class User extends Resource { }
+      class User extends Resource {}
 
       const description = Resource.describe(User);
       expect(description).toEqual({
         name: 'user',
-        fields: [{ name: 'id', primary: true, type: Number }]
+        fields: [{ name: 'id', primary: true, type: Number }],
       });
     });
 

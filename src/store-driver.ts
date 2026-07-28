@@ -1,6 +1,6 @@
 import type { ConstructorOf } from './resource.js';
 import { Query, Resource, ResourceDriver } from './resource.js';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 const headers = { 'content-type': 'application/json' };
 
@@ -77,7 +77,10 @@ export class StoreDriver extends ResourceDriver {
 
     if (remote.ok) {
       const map = await remote.json();
-      const items: M[] = Object.values(map).map((raw) => raw ? this.createModel(resource, raw) : null).filter(Boolean);
+      const items = Object.values(map)
+        .map((raw) => (raw ? this.createModel(resource, raw) : null))
+        .filter(Boolean) as M[];
+
       return this.filter(items, query);
     }
 
@@ -87,7 +90,7 @@ export class StoreDriver extends ResourceDriver {
   private getUrl<T extends Resource>(model: T) {
     const desc = Resource.describe(model);
     const { name } = desc;
-    const primary = desc.fields.find((field) => field.primary);
+    const primary = desc.fields.find((field) => field.primary)!;
 
     if (!model[primary.name]) {
       model[primary.name] = StoreDriver.uid();
@@ -102,7 +105,7 @@ export class StoreDriver extends ResourceDriver {
   private filter<T extends Resource>(items: T[], query: Query<T>) {
     const filters = query.toJSON();
 
-    let next: (typeof filters)[number];
+    let next: (typeof filters)[number] | undefined;
 
     while (items.length && (next = filters.shift())) {
       const [left, op, right] = next;
@@ -138,7 +141,7 @@ export class StoreDriver extends ResourceDriver {
     const modelData = {};
 
     desc.fields.forEach((field) => {
-      modelData[field.name] = data ? data[field.name] : field.defaultValue;
+      modelData[field.name] = (data && data[field.name]) ?? field.defaultValue;
     });
 
     return new model(modelData) as M;

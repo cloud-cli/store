@@ -1,17 +1,16 @@
 import { StoreDriver, Resource, Property, Model, Primary, Query } from './index';
+import { describe, it, expect, vi } from 'vitest';
 
 const storeUrl = 'http://localhost:1234/store-id/';
 const headers = { 'content-type': 'application/json' };
 
-beforeAll(() => {
-  jest.spyOn(StoreDriver, 'fetch');
-  jest.spyOn(StoreDriver, 'uid');
-});
-
 function setup() {
   const driver = new StoreDriver(storeUrl);
-  const fetch = StoreDriver.fetch as unknown as jest.SpyInstance;
-  const uid = StoreDriver.uid as unknown as jest.SpyInstance;
+  (StoreDriver as any).fetch = vi.fn();
+  (StoreDriver as any).uid = vi.fn();
+
+  const fetch = StoreDriver.fetch as ReturnType<typeof vi.fn>;
+  const uid = StoreDriver.uid as ReturnType<typeof vi.fn>;
 
   fetch.mockReset();
   uid.mockReset();
@@ -25,7 +24,7 @@ describe('store driver', () => {
     it('shoud use process.env.STORE_URL by default', async () => {
       process.env.STORE_URL = 'http://localhost:5678/store-url/';
       const driver = new StoreDriver();
-      const fetch = (StoreDriver.fetch = jest.fn());
+      const fetch = (StoreDriver.fetch = vi.fn());
 
       @Model('user')
       class User extends Resource {}
@@ -120,8 +119,8 @@ describe('store driver', () => {
     @Model('group')
     class Group extends Resource {
       @Primary() @Property(Number) oid: number;
-      @Property(String) name: string;
-      @Property(Boolean, true) enabled: string;
+      @Property(String) name?: string;
+      @Property(Boolean, true) enabled?: string;
     }
 
     it('should add items to a table', async () => {
@@ -149,7 +148,7 @@ describe('store driver', () => {
 
     it('should throw error', async () => {
       const { fetch } = setup();
-      const result = { ok: false, status: 400, json: jest.fn() };
+      const result = { ok: false, status: 400, json: vi.fn() };
       fetch.mockImplementationOnce(() => Promise.resolve(result));
 
       const group = new Group({ name: 'test', enabled: true });
@@ -162,8 +161,8 @@ describe('store driver', () => {
     @Model('person')
     class Person extends Resource {
       @Primary() @Property(String) uid: string;
-      @Property(String) name: string;
-      @Property(Number) age: number;
+      @Property(String) name?: string;
+      @Property(Number) age?: number;
     }
 
     it('should find all items that match the query', async () => {
@@ -194,7 +193,7 @@ describe('store driver', () => {
 
     it('should throw error', async () => {
       const { fetch } = setup();
-      const result = { ok: false, json: jest.fn() };
+      const result = { ok: false, json: vi.fn() };
       fetch.mockImplementationOnce(() => Promise.resolve(result));
 
       await expect(Resource.find(Person, new Query())).rejects.toThrowError('Not found');

@@ -1,16 +1,18 @@
 import { Database } from 'better-sqlite3';
 import { SQLiteDriver, Resource, Property, Query, Model, NotNull, Unique, Primary } from './index';
+import { beforeAll, describe, it, expect, vi } from 'vitest';
 
 function setup(all: any = [null, []], run = [], get = {}) {
   const driver = new SQLiteDriver(':memory:');
   const db: Database = driver['db'];
 
   const mock = {
-    get: jest.fn(() => { if (get && get instanceof Error) { throw get; } return get; }),
-    all: jest.fn(() => { if (all[0]) { throw all[0]; } return all[1]; }),
-    run: jest.fn(() => { if (run[0]) { throw run[0]; } return { lastInsertRowid: 1 }; }),
+    get: vi.fn(() => { if (get && get instanceof Error) { throw get; } return get; }),
+    all: vi.fn(() => { if (all[0]) { throw all[0]; } return all[1]; }),
+    run: vi.fn(() => { if (run[0]) { throw run[0]; } return { lastInsertRowid: 1 }; }),
   };
-  jest.spyOn(db, 'prepare').mockImplementation(() => mock as any);
+
+  db['prepare'] = vi.fn().mockImplementation(() => mock as any);
   Resource.use(driver);
 
   return { db, mock };

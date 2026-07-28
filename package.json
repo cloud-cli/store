@@ -7,8 +7,8 @@
   "type": "module",
   "prettier": "@cloud-cli/prettier-config",
   "scripts": {
-    "test": "jest",
-    "tdd": "jest --watchAll",
+    "test": "pnpm vitest",
+    "tdd": "pnpm vitest --watch",
     "build": "tsc"
   },
   "keywords": [
@@ -24,11 +24,12 @@
   "author": "Darlan Alves <me@darlanalv.es>",
   "license": "MIT",
   "devDependencies": {
-    "@cloud-cli/jest-config": "^1.0.0",
     "@cloud-cli/prettier-config": "^1.0.0",
     "@cloud-cli/typescript-config": "^1.0.1",
-    "@types/node": "^20.3.3",
-    "better-sqlite3": "^13.0.1"
+    "@types/node": "^20.19.43",
+    "better-sqlite3": "^13.0.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   },
   "peerDependencies": {
     "better-sqlite3": "^13.0.1"

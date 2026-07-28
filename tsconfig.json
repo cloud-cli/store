@@ -1,10 +1,11 @@
 {
-  "extends": "@cloud-cli/typescript-config",
   "compilerOptions": {
+    "rootDir": "src/",
     "outDir": "./dist",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": ["node", "jest"]
+    "noImplicitAny": false
   },
-  "include": ["./src/*.ts"]
+  "include": ["./src/*.ts"],
+  "exclude": ["dist/**", "src/**/*.spec.ts"]
 }
