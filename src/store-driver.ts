@@ -90,7 +90,7 @@ export class StoreDriver extends ResourceDriver {
   private getUrl<T extends Resource>(model: T) {
     const desc = Resource.describe(model);
     const { name } = desc;
-    const primary = desc.fields.find((field) => field.primary);
+    const primary = desc.fields.find((field) => field.primary)!;
 
     if (!model[primary.name]) {
       model[primary.name] = StoreDriver.uid();

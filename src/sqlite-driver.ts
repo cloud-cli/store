@@ -54,7 +54,7 @@ export class SQLiteDriver extends ResourceDriver {
       return SQLiteDriver.serialize(field.type, model[field.name] || field.defaultValue || '');
     });
 
-    const primary = desc.fields.find((field) => field.primary);
+    const primary = desc.fields.find((field) => field.primary)!;
     const isUpdate = model[primary.name] !== undefined;
 
     if (isUpdate) {
@@ -73,7 +73,7 @@ export class SQLiteDriver extends ResourceDriver {
         const { lastInsertRowid } = statement.run(row);
         resolve(String(lastInsertRowid));
       } catch (error) {
-        reject(new Error('Cannot store item: ' + error.message));
+        reject(new Error('Cannot store item: ' + String(error)));
       }
     });
   }
@@ -83,7 +83,7 @@ export class SQLiteDriver extends ResourceDriver {
     const desc = Resource.describe(resource);
 
     return new Promise((resolve, reject) => {
-      const primary = desc.fields.find((field) => field.primary);
+      const primary = desc.fields.find((field) => field.primary)!;
       const query = `DELETE FROM ${desc.name} WHERE ${primary.name} = ?`;
       Logger.debug(query, model[primary.name]);
 
@@ -92,7 +92,7 @@ export class SQLiteDriver extends ResourceDriver {
         statement.run([model[primary.name]]);
         resolve();
       } catch (error) {
-        reject(new Error('Unable to remove: ' + error.message));
+        reject(new Error('Unable to remove: ' + String(error)));
       }
     });
   }
@@ -101,7 +101,7 @@ export class SQLiteDriver extends ResourceDriver {
     const Model = Object.getPrototypeOf(model).constructor;
     const desc = Resource.describe(Model);
     const columns = desc.fields.map((f) => f.name);
-    const primary = desc.fields.find((field) => field.primary);
+    const primary = desc.fields.find((field) => field.primary)!;
     const id = model[primary.name];
 
     const query = `SELECT ${columns} FROM ${desc.name} WHERE ${primary.name} = ? LIMIT 1`;

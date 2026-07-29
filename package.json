@@ -2,14 +2,13 @@
   "name": "@cloud-cli/store",
   "version": "0.0.0",
   "description": "Data store abstraction",
-  "main": "dist/index.js",
+  "main": "dist/store.js",
   "types": "dist/index.d.ts",
   "type": "module",
-  "prettier": "@cloud-cli/prettier-config",
   "scripts": {
     "test": "pnpm vitest",
     "tdd": "pnpm vitest --watch",
-    "build": "tsc"
+    "build": "pnpm vite build && pnpm tsc --emitDeclarationOnly --declaration"
   },
   "keywords": [
     "cloudy"
@@ -29,6 +28,7 @@
     "@types/node": "^26.1.2",
     "better-sqlite3": "^13.0.1",
     "typescript": "^7.0.2",
+    "vite": "^7.3.6",
     "vitest": "^4.1.10"
   },
   "peerDependencies": {

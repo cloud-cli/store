@@ -1,15 +1,30 @@
 import { Database } from 'better-sqlite3';
-import { SQLiteDriver, Resource, Property, Query, Model, NotNull, Unique, Primary } from './index';
-import { beforeAll, describe, it, expect, vi } from 'vitest';
+import { SQLiteDriver, Resource, Property, Query, Model, NotNull, Unique, Primary } from './index.js';
+import { describe, it, expect, vi } from 'vitest';
 
 function setup(all: any = [null, []], run = [], get = {}) {
   const driver = new SQLiteDriver(':memory:');
   const db: Database = driver['db'];
 
   const mock = {
-    get: vi.fn(() => { if (get && get instanceof Error) { throw get; } return get; }),
-    all: vi.fn(() => { if (all[0]) { throw all[0]; } return all[1]; }),
-    run: vi.fn(() => { if (run[0]) { throw run[0]; } return { lastInsertRowid: 1 }; }),
+    get: vi.fn(() => {
+      if (get && get instanceof Error) {
+        throw get;
+      }
+      return get;
+    }),
+    all: vi.fn(() => {
+      if (all[0]) {
+        throw all[0];
+      }
+      return all[1];
+    }),
+    run: vi.fn(() => {
+      if (run[0]) {
+        throw run[0];
+      }
+      return { lastInsertRowid: 1 };
+    }),
   };
 
   db['prepare'] = vi.fn().mockImplementation(() => mock as any);
@@ -30,7 +45,9 @@ describe('sqlite driver', () => {
       const { db, mock } = setup();
       await Resource.create(User);
 
-      expect(db.prepare).toHaveBeenCalledWith('CREATE TABLE IF NOT EXISTS user (id INTEGER, name TEXT, alive INTEGER, PRIMARY KEY(id))');
+      expect(db.prepare).toHaveBeenCalledWith(
+        'CREATE TABLE IF NOT EXISTS user (id INTEGER, name TEXT, alive INTEGER, PRIMARY KEY(id))',
+      );
       expect(mock.run).toHaveBeenCalledWith([]);
     });
 
@@ -64,7 +81,9 @@ describe('sqlite driver', () => {
       }
 
       await Resource.create(User);
-      expect(db.prepare).toHaveBeenCalledWith('CREATE TABLE IF NOT EXISTS user (id INTEGER, name TEXT NOT NULL, age INTEGER, UNIQUE(age), PRIMARY KEY(id))');
+      expect(db.prepare).toHaveBeenCalledWith(
+        'CREATE TABLE IF NOT EXISTS user (id INTEGER, name TEXT NOT NULL, age INTEGER, UNIQUE(age), PRIMARY KEY(id))',
+      );
     });
   });
 
@@ -112,8 +131,6 @@ describe('sqlite driver', () => {
 
   describe('findAll()', () => {
     it('should select all items from a table', async () => {
-
-
       @Model('product')
       class Product extends Resource {
         @Primary() @Property(Number) id: number;
@@ -129,7 +146,6 @@ describe('sqlite driver', () => {
     });
 
     it('should select specific items from a table', async () => {
-
       @Model('user')
       class User extends Resource {
         @Primary() @Property(Number) id: number;
@@ -186,9 +202,9 @@ describe('sqlite driver', () => {
       setup(undefined, [new Error('Nope')]);
 
       @Model('group')
-      class Group extends Resource { }
+      class Group extends Resource {}
       const group = new Group({});
-      await expect(group.save()).rejects.toThrowError(new Error('Cannot store item: Nope'));
+      await expect(group.save()).rejects.toThrowError(new Error('Cannot store item: Error: Nope'));
     });
   });
 
@@ -217,7 +233,7 @@ describe('sqlite driver', () => {
       }
 
       const user = new Group({ oid: 123 });
-      await expect(user.remove()).rejects.toThrowError(new Error('Unable to remove: bang'));
+      await expect(user.remove()).rejects.toThrow(new Error('Unable to remove: Error: bang'));
     });
   });
 
@@ -240,14 +256,14 @@ describe('sqlite driver', () => {
         {
           name: 'Tony',
           dead: true,
-          properties: { superPowers: ['suit'] }
+          properties: { superPowers: ['suit'] },
         },
 
         {
           name: 'DrStranger',
-          properties: { superPowers: ['time'] }
-        }
-      ]
+          properties: { superPowers: ['time'] },
+        },
+      ];
 
       const ids = [];
       for (const hero of heroes) {

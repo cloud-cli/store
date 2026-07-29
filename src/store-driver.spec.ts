@@ -1,4 +1,4 @@
-import { StoreDriver, Resource, Property, Model, Primary, Query } from './index';
+import { StoreDriver, Resource, Property, Model, Primary, Query } from './index.js';
 import { describe, it, expect, vi } from 'vitest';
 
 const storeUrl = 'http://localhost:1234/store-id/';
