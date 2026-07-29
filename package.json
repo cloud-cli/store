@@ -8,7 +8,7 @@
   "scripts": {
     "test": "pnpm vitest",
     "tdd": "pnpm vitest --watch",
-    "build": "pnpm vite build && pnpm tsc --emitDeclarationOnly --declaration"
+    "build": "pnpm tsc --declaration"
   },
   "keywords": [
     "cloudy"
